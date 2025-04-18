@@ -1,5 +1,5 @@
 // Import necessary modules
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import { socket } from './config/envVar.js';
 
 
@@ -64,6 +64,7 @@ function start() {
       }
     });
 
+
     // Join room event
     socket.on('JOIN_ROOM', (data) => {
       if (data.groupID) {
@@ -71,13 +72,17 @@ function start() {
       }
     });
 
+
     // Leave room event
     socket.on('LEAVE_ROOM', (data) => {
-      if (data.groupID) {
+      if (data.groupID && data.userID) {
         socket.leave(data?.groupID);
-        socket.to(data?.groupID).emit('userleft', data.userID);
+        socket.to(data?.groupID).emit('userleft', data);
+        clients = clients.filter(client => client.userID !== data.userID);
       }
     });
+
+
     //  MESSAGE_FROM_CLIENT
     socket.on('MESSAGE', (data) => {
       //find room by group id in socket rooms
@@ -86,81 +91,11 @@ function start() {
       
         //send solo message
       if (user) {
-        console.log(user);
         io.to(user.socketID).emit('new message solo', data);
       }
   } else if (data.groupID) io.in(data.groupID).emit('new message', data);
 });
-
-    // Call event
-    socket.on('CALL', (data) => {
-      const callee = clients.find(
-        (client) => client.userID === data.calleeID
-      );
-
-      if (callee) {
-        callee.isCalling = true;
-
-        if (data.groupID) {
-          // Handle group call logic
-          socket.to(data.groupID).emit('incomingCall', {
-            callerID: data.callerID,
-            groupID: data.groupID,
-          });
-        } else {
-          // Handle solo call logic
-          socket.to(callee.socketID).emit('incomingCall', {
-            callerID: data.callerID,
-          });
-        }
-      }
-    });
-
-    // Answer event
-    socket.on('ANSWER', (data) => {
-      const caller = clients.find(
-        (client) => client.userID === data.callerID
-      );
-
-      if (caller) {
-        // Check if the call is accepted
-        const isCallAccepted = data.isAccepted || false;
-
-        // Update the caller's isCalling status
-        caller.isCalling = false;
-
-        // Emit different events based on acceptance status
-        if (isCallAccepted) {
-          // Handle accepted call logic
-          socket.to(caller.socketID).emit('callAccepted');
-        } else {
-          // Handle rejected call logic
-          socket.to(caller.socketID).emit('callRejected');
-        }
-      }
-    });
-
-    // End call event
-    socket.on('END_CALL', (data) => {
-      const otherUser = clients.find(
-        (client) => client.userID === data.otherUserID
-      );
-
-      if (otherUser) {
-        otherUser.isCalling = false;
-
-        if (data.groupID) {
-          // Handle group call logic
-          socket
-            .to(data.groupID)
-            .emit('callEnded', { userID: data.otherUserID });
-        } else {
-          // Handle solo call logic
-          socket.to(otherUser.socketID).emit('callEnded');
-        }
-      }
-    });
-  });
+});
 }
 
 start()
