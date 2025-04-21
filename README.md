@@ -1,6 +1,6 @@
 # KMPCALL Backend Server
 
-The backend server for KMPCALL - a Kotlin Multiplatform real-time communication app supporting voice/video calls.
+The backend server for [KMPCALL](https://github.com/Bouyahyaa/KMPCALL) - a Kotlin Multiplatform real-time communication app supporting voice/video calls.
 
 ## 🚀 Quick Start
 
